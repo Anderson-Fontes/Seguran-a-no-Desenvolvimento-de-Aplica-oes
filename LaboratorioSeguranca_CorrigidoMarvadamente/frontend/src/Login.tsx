@@ -23,7 +23,11 @@ function Login() {
             if(!response.data.success) {
                 setMessage("Erro no login");
             } else {
-                localStorage.setItem("user", JSON.stringify(response.data.user));
+                // localStorage.setItem("user", JSON.stringify(response.data.user));
+                // [CORREÇÃO 13 - JWT/XSS] Não guardamos mais os dados do usuário no localStorage:
+                // qualquer JavaScript injetado (XSS) consegue ler o localStorage. Além disso, o back-end
+                // não devolve mais a senha no login. O Dashboard busca os dados do usuário em
+                // GET /usuario/payload-usuario, usando o JWT que está no cookie httpOnly.
                 navigate("/dashboard");
             }
         } catch (error: unknown){

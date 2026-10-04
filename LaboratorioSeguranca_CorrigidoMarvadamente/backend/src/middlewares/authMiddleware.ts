@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import ValidarToken from "../Services/jwtServices";
-import { RetornoPayload } from "../Tipos/retornoPayload_CORRIGIDOMARVADAMENTE";
+import { RetornoPayload } from "../Tipos/retornoPayload";
 
 // Corrige a vulnerabilidade de Broken Access Control:
 // antes nenhuma rota verificava se existia um usuário autenticado nem se
@@ -32,6 +32,12 @@ export function autenticar(req: Request, res: Response, next: NextFunction) {
     }
 
     req.usuario = payload;
+
+    // [CORREÇÃO 03 - CSRF/JWT] O payload validado do JWT também fica em res.locals
+    // para que a rota /usuario/payload-usuario consiga devolvê-lo ao front-end.
+    // Assim o front não precisa mais guardar os dados do usuário no localStorage.
+    res.locals.payload = payload;
+
     next();
 }
 

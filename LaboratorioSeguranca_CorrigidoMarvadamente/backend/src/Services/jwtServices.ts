@@ -1,5 +1,5 @@
 import jwt from "jsonwebtoken";
-import { RetornoPayload } from "../Tipos/retornoPayload_CORRIGIDOMARVADAMENTE";
+import { RetornoPayload } from "../Tipos/retornoPayload";
 
 export default function ValidarToken(token: string): RetornoPayload | null {
     try {

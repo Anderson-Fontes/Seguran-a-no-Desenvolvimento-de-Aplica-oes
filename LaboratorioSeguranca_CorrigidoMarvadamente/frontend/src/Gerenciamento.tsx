@@ -16,6 +16,9 @@ function Gerenciamento() {
   const [novoValor, setNovoValor] = useState<{ [key: number]: number }>({});
   const [menuAberto, setMenuAberto] = useState(false);
 
+  // [CORREÇÃO 18 - CSRF] Token anti-CSRF recebido do back-end (somente em memória).
+  const [tokenCsrf, setTokenCsrf] = useState("");
+
 
   useEffect(() => {
 
@@ -23,21 +26,37 @@ function Gerenciamento() {
 
       try {
 
-        const usuarioStorage = localStorage.getItem("user");
+        // const usuarioStorage = localStorage.getItem("user");
+        //
+        // if (!usuarioStorage) {
+        //   console.error("Usuário não encontrado no localStorage");
+        //   return;
+        // }
+        //
+        // const usuario = JSON.parse(usuarioStorage);
+        //
+        // console.log(
+        //   "Usuário recuperado do storage:",
+        //   usuario
+        // );
+        //
+        // setUser(usuario);
 
-        if (!usuarioStorage) {
-          console.error("Usuário não encontrado no localStorage");
+        // [CORREÇÃO 18 - CSRF/JWT] Usuário e token anti-CSRF vêm do back-end (payload do JWT),
+        // não mais do localStorage.
+        const responsePayload = await axios.get<{
+          success: boolean;
+          payload: { id: number; nome: string; email: string; tipo: number };
+          cryptoToken: string;
+        }>("/usuario/payload-usuario", { withCredentials: true });
+
+        if (!responsePayload.data.success) {
+          console.error("Sessão inválida");
           return;
         }
 
-        const usuario = JSON.parse(usuarioStorage);
-
-        console.log(
-          "Usuário recuperado do storage:",
-          usuario
-        );
-
-        setUser(usuario);
+        setUser(responsePayload.data.payload);
+        setTokenCsrf(responsePayload.data.cryptoToken);
 
         const response = await axios.get<{
           iptu: Iptuu[]
@@ -69,11 +88,24 @@ function Gerenciamento() {
   ) => {
 
     try {
+      // await axios.put(
+      //   "/usuario/atualizar-iptu",
+      //   {
+      //     usuarioId: usuarioId,
+      //     novoValor: novoValor[usuarioId]
+      //   }
+      // );
+
+      // [CORREÇÃO 19 - CSRF] A requisição PUT (altera dados) agora envia o token anti-CSRF no
+      // cabeçalho "X-CSRF-Token". Sem ele (ou com um valor diferente do cookie) o back-end responde 403.
       await axios.put(
         "/usuario/atualizar-iptu",
         {
           usuarioId: usuarioId,
           novoValor: novoValor[usuarioId]
+        },
+        {
+          headers: { "X-CSRF-Token": tokenCsrf }
         }
       );
 
